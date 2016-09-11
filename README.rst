@@ -16,6 +16,7 @@ Basic example
 
 
     .. code:: python
+
         from __future__ import print_function
         from struct import pack
         import random
