@@ -28,7 +28,7 @@ class DataChunk(object):
     whenever a complete message is read, DataChunk calls the handle_msg method of the handler
     '''
 
-    def __init__(self, handler):
+    def __init__(self, handler, little_endian=True):
         '''
         Creates a DataChunk object
         :param handler: handler for a message obtained
@@ -41,6 +41,10 @@ class DataChunk(object):
         if handler is None:
             raise Exception('handler must not be None')
         self.__handler = handler
+        if little_endian:
+            self.__endian = 'i'
+        else:
+            self.__endian = '>i'
 
     def __handle_msg(self, data):
        self.__handler.handle_msg(data) 
@@ -49,7 +53,7 @@ class DataChunk(object):
         datalen = len(data)
         if self.__expect_new:
             if datalen >= 4:
-                self.__current_msg_len = unpack('i', data[0:4])[0]
+                self.__current_msg_len = unpack(self.__endian, data[0:4])[0]
                 if (self.__current_msg_len + 4) == datalen:
                     # We got the entire packet 
                     self.__handle_msg(data[4:])
@@ -72,7 +76,7 @@ class DataChunk(object):
                             self.__current_buffer = BytesIO()
                             break
                         if 4 <= (datalen - start):
-                            self.__current_msg_len = unpack('i', data[start : start + 4])[0]
+                            self.__current_msg_len = unpack(self.__endian, data[start : start + 4])[0]
                             start += 4
                             if (datalen - start) >= self.__current_msg_len:
                                 # we have this message also in this buffer
@@ -107,7 +111,7 @@ class DataChunk(object):
                     start = 4 - self.__current_buffer.tell()
                     self.__current_buffer.write(data[0: start])
                     self.__current_buffer.seek(0)
-                    self.__current_msg_len = unpack('i', self.__current_buffer.read())[0]
+                    self.__current_msg_len = unpack(self.__endian, self.__current_buffer.read())[0]
                     self.__current_buffer = BytesIO()
                 else:
                     # Till now even the size of the data is not known
@@ -121,10 +125,10 @@ class DataChunk(object):
                         self.__current_buffer.write(data[start:])
                         break
                     elif (datalen - start) == 4:
-                        self.__current_msg_len = unpack('i', data[start:])[0]
+                        self.__current_msg_len = unpack(self.__endian, data[start:])[0]
                         break
                     else:
-                        self.__current_msg_len = unpack('i', data[start: start + 4])[0]
+                        self.__current_msg_len = unpack(self.__endian, data[start: start + 4])[0]
                         start += 4
                 if (datalen - start) >= (self.__current_msg_len - self.__current_buffer.tell()):
                     consume = self.__current_msg_len -  self.__current_buffer.tell()

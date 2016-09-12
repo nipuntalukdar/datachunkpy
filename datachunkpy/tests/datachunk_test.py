@@ -35,6 +35,23 @@ class DatachunkTester(unittest.TestCase):
         d.process_chunk(mydata)
         self.assertEqual(total_bytes, mh.bytes_processed)
         self.assertEqual(i, mh.msg_processed)
+    
+    def test_fun_big(self):
+        mh = MyMsgHandler()
+        d = DataChunk(mh, False)
+        i = 0
+        random.seed()
+        mydata = b''
+        total_bytes = 0
+        while i < 10000:
+            i += 1
+            j = random.randint(1,50)
+            mydata += pack('>i', j)
+            mydata += b'a' * j
+            total_bytes += j
+        d.process_chunk(mydata)
+        self.assertEqual(total_bytes, mh.bytes_processed)
+        self.assertEqual(i, mh.msg_processed)
 
 if __name__ == '__main__':
     unittest.main()
